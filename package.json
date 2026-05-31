@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "concurrently --names \"VITE,API\" --prefix-colors \"cyan,green\" \"vite\" \"node server/index.js\"",
     "build": "vite build",
+    "start": "node server/index.js",
     "preview": "vite preview",
     "server": "node server/index.js"
   },
