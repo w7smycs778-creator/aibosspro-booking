@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    direction: rtl;
+  }
+
+  body {
+    font-family: 'Segoe UI', 'Arial Hebrew', 'Helvetica Neue', Arial, sans-serif;
+    background-color: #0D1117;
+    color: #f0f6fc;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Animated circuit-board / particle background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      /* vertical traces */
+      linear-gradient(rgba(37, 99, 235, 0.06) 1px, transparent 1px),
+      /* horizontal traces */
+      linear-gradient(90deg, rgba(37, 99, 235, 0.06) 1px, transparent 1px),
+      /* circuit nodes at intersections */
+      radial-gradient(circle, rgba(37, 99, 235, 0.2) 1.5px, transparent 1.5px);
+    background-size: 48px 48px, 48px 48px, 48px 48px;
+    background-position: 0 0, 0 0, 24px 24px;
+    animation: circuit-drift 30s linear infinite;
+  }
+
+  @keyframes circuit-drift {
+    from { background-position: 0 0, 0 0, 24px 24px; }
+    to   { background-position: 48px 48px, 48px 48px, 72px 72px; }
+  }
+
+  input,
+  select,
+  button,
+  textarea {
+    font-family: inherit;
+  }
+
+  /* Remove iOS default input styling */
+  input[type='tel'],
+  input[type='text'],
+  select {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+}
+
+/* Blue text-shadow glow for the logo */
+.logo-glow {
+  text-shadow:
+    0 0 18px rgba(37, 99, 235, 0.9),
+    0 0 40px rgba(37, 99, 235, 0.5),
+    0 0 70px rgba(37, 99, 235, 0.25);
+}
