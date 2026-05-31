@@ -3,6 +3,7 @@ import express from 'express'
 import cors from 'cors'
 import { google } from 'googleapis'
 import axios from 'axios'
+import { randomUUID } from 'crypto'
 
 const app = express()
 app.use(express.json())
@@ -130,11 +131,13 @@ app.post('/api/book', async (req, res) => {
       return res.status(409).json({ error: 'שעה זו כבר תפוסה — אנא בחר שעה אחרת' })
     }
 
-    await calendar.events.insert({
+    const bookingId = randomUUID()
+
+    const { data: calEvent } = await calendar.events.insert({
       calendarId: process.env.CALENDAR_ID,
       requestBody: {
         summary: `${treatment} — ${clientName}`,
-        description: `שם: ${clientName}\nטלפון: ${cleanPhone}\nטיפול: ${treatment}`,
+        description: `שם: ${clientName}\nטלפון: ${cleanPhone}\nטיפול: ${treatment}\nBooking ID: ${bookingId}`,
         start: { dateTime: startDateTime.toISOString(), timeZone: 'Asia/Jerusalem' },
         end: { dateTime: endDateTime.toISOString(), timeZone: 'Asia/Jerusalem' },
       },
@@ -144,7 +147,15 @@ app.post('/api/book', async (req, res) => {
     const webhookUrl = process.env.WHATSAPP_WEBHOOK_URL
     if (webhookUrl) {
       axios
-        .post(webhookUrl, { clientName, clientPhone: cleanPhone, treatment, date, time }, { timeout: 8000 })
+        .post(webhookUrl, {
+          clientName,
+          clientPhone: cleanPhone,
+          treatment,
+          date,
+          time,
+          bookingId,
+          calendarLink: calEvent.htmlLink ?? null,
+        }, { timeout: 8000 })
         .catch(e => console.warn('[webhook]', e.message))
     }
 
