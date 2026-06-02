@@ -73,17 +73,11 @@ app.get('/api/availability', async (req, res) => {
 
     let available = ALL_SLOTS.filter(s => !booked.has(s))
 
-    // When today is selected, drop slots within 1 hour of now
-    const todayInIsrael = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' })
+    // When today is selected, drop slots within 1 hour of now (Israel time)
+    const nowIsrael = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }))
+    const todayInIsrael = nowIsrael.toLocaleDateString('en-CA')
     if (date === todayInIsrael) {
-      const nowStr = new Date().toLocaleTimeString('en-US', {
-        timeZone: 'Asia/Jerusalem',
-        hour12: false,
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-      const [nowH, nowM] = nowStr.split(':').map(Number)
-      const cutoffMinutes = nowH * 60 + nowM + 60
+      const cutoffMinutes = nowIsrael.getHours() * 60 + nowIsrael.getMinutes() + 60
       available = available.filter(s => {
         const [h, m] = s.split(':').map(Number)
         return h * 60 + m > cutoffMinutes
