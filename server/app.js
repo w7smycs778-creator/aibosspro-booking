@@ -2,14 +2,13 @@ import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import { google } from 'googleapis'
-import axios from 'axios'
 import { randomUUID } from 'crypto'
 
 const app = express()
 app.use(express.json())
 app.use(cors())
 
-const ALL_SLOTS = ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00']
+const ALL_SLOTS = ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '19:00', '19:30']
 
 // Israel is UTC+2 (winter) or UTC+3 (summer / DST).
 // Rough approximation: April–October → +03:00, otherwise +02:00.
@@ -72,7 +71,26 @@ app.get('/api/availability', async (req, res) => {
         })
     )
 
-    res.json({ available: ALL_SLOTS.filter(s => !booked.has(s)) })
+    let available = ALL_SLOTS.filter(s => !booked.has(s))
+
+    // When today is selected, drop slots within 1 hour of now
+    const todayInIsrael = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' })
+    if (date === todayInIsrael) {
+      const nowStr = new Date().toLocaleTimeString('en-US', {
+        timeZone: 'Asia/Jerusalem',
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+      const [nowH, nowM] = nowStr.split(':').map(Number)
+      const cutoffMinutes = nowH * 60 + nowM + 60
+      available = available.filter(s => {
+        const [h, m] = s.split(':').map(Number)
+        return h * 60 + m > cutoffMinutes
+      })
+    }
+
+    res.json({ available })
   } catch (err) {
     console.error('[availability]', err.message)
     res.status(500).json({ error: 'שגיאה בטעינת זמינות. נסה שוב.' })
@@ -142,23 +160,7 @@ app.post('/api/book', async (req, res) => {
       },
     })
 
-    // Fire WhatsApp webhook (non-blocking — failure doesn't cancel the booking)
-    const webhookUrl = process.env.WHATSAPP_WEBHOOK_URL
-    if (webhookUrl) {
-      axios
-        .post(webhookUrl, {
-          clientName,
-          clientPhone: cleanPhone,
-          treatment,
-          date,
-          time,
-          bookingId,
-          calendarLink: calEvent.htmlLink ?? null,
-        }, { timeout: 8000 })
-        .catch(e => console.warn('[webhook]', e.message))
-    }
-
-    res.json({ success: true })
+    res.json({ success: true, bookingId })
   } catch (err) {
     console.error('[book]', err.message)
     res.status(500).json({ error: 'שגיאה בקביעת התור. נסה שוב.' })
