@@ -10,10 +10,24 @@ export default function App() {
       {/* Header */}
       <header className="w-full max-w-sm px-6 pt-10 pb-5">
         <div className="text-center">
-          <p className="logo-glow text-3xl font-extrabold tracking-widest text-[#2563EB] mb-1 select-none">
-            AIBOSSPRO
-          </p>
-          <p className="text-[#2563EB]/50 text-xs tracking-[0.2em] font-mono uppercase mb-2">
+          {/* Same lockup as www.aibosspro.com's navbar (mark + wordmark in one asset) */}
+          <a
+            href="https://www.aibosspro.com"
+            aria-label="AIBOSSPRO — לאתר הראשי"
+            className="inline-flex justify-center mb-3 select-none"
+            dir="ltr"
+          >
+            <img
+              src="/logo-wordmark.png"
+              srcSet="/logo-wordmark.png 1x, /logo-wordmark@2x.png 2x"
+              alt="AIBOSSPRO"
+              width={175}
+              height={48}
+              className="h-12 w-auto"
+              decoding="async"
+            />
+          </a>
+          <p dir="ltr" className="text-[#2563EB]/50 text-xs tracking-[0.2em] font-mono uppercase mb-2">
             We Automate. You Scale.
           </p>
           <p className="text-[#8B949E] text-sm tracking-wide">שירותי AI ואוטומציה</p>
