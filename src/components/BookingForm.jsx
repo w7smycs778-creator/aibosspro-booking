@@ -84,19 +84,7 @@ export default function BookingForm({ onSuccess }) {
       setSubmitted(true)
       onSuccess({ clientName: name.trim(), clientPhone: cleanPhone, treatment, date, time })
 
-      // Fire WhatsApp confirmation — browser-side, fire-and-forget
-      fetch('https://yisraelagent.app.n8n.cloud/webhook/booking-confirm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          clientName: name.trim(),
-          clientPhone: cleanPhone,
-          treatment,
-          date,
-          time,
-          bookingId: data.bookingId ?? null,
-        }),
-      }).catch(() => {})
+      // The WhatsApp confirmation is sent by the server now, with a secret header (2026-10-16).
     } catch (err) {
       setError(err.message)
       setSubmitting(false)

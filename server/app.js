@@ -157,6 +157,9 @@ app.post('/api/book', async (req, res) => {
     // The CRM gets every booking from this server, signed (2026-10-16; replaces the browser's call to n8n once the
     // owner switches over). Fire and forget: the visitor's booking never waits on it or fails because of it.
     notifyCrm({ clientName, clientPhone: cleanPhone, treatment, date, time, bookingId })
+    // The WhatsApp confirmation through n8n, from this server with a secret header (2026-10-16, security: the
+    // browser's open call let anyone make the 055 send WhatsApps). Until the CRM sends confirmations.
+    notifyN8n({ clientName, clientPhone: cleanPhone, treatment, date, time, bookingId })
 
     res.json({ success: true, bookingId })
   } catch (err) {
@@ -175,6 +178,15 @@ function notifyCrm(booking) {
   fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Booking-Signature': signature }, body: raw, signal: AbortSignal.timeout(8000) })
     .then((r) => { if (!r.ok) console.error('[crm]', r.status) })
     .catch((e) => console.error('[crm]', e.message))
+}
+
+/** POST the booking to n8n's booking-confirm webhook with the shared secret header (N8N_BOOKING_SECRET). */
+function notifyN8n(booking) {
+  const secret = process.env.N8N_BOOKING_SECRET
+  if (!secret) return
+  fetch('https://yisraelagent.app.n8n.cloud/webhook/booking-confirm', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Booking-Secret': secret }, body: JSON.stringify(booking), signal: AbortSignal.timeout(8000) })
+    .then((r) => { if (!r.ok) console.error('[n8n]', r.status) })
+    .catch((e) => console.error('[n8n]', e.message))
 }
 
 export default app
