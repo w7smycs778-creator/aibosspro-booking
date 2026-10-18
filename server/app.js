@@ -154,7 +154,7 @@ app.post('/api/book', async (req, res) => {
       },
     })
 
-    // The CRM gets every booking from this server, signed (2026-10-16). Awaited, at most 3 s (2026-10-18: on Vercel a
+    // The CRM gets every booking from this server, signed (2026-10-16). Awaited, at most 6 s (2026-10-18: on Vercel a
     // function is frozen once it answers, so a fire-and-forget call never left); it never fails the visitor's booking.
     await notifyCrm({ clientName, clientPhone: cleanPhone, treatment, date, time, bookingId })
     // No n8n step (his order, 2026-10-17): the CRM drafts the WhatsApp confirmation from the 050 for his approval.
@@ -176,7 +176,7 @@ async function notifyCrm(booking) {
   const raw = JSON.stringify(booking)
   const signature = createHmac('sha256', secret).update(raw).digest('hex')
   try {
-    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Booking-Signature': signature }, body: raw, signal: AbortSignal.timeout(3000) })
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Booking-Signature': signature }, body: raw, signal: AbortSignal.timeout(6000) })
     if (!r.ok) console.error('[crm]', r.status)
   } catch (e) {
     console.error('[crm]', e.message)
