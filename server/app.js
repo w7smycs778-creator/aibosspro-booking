@@ -154,9 +154,9 @@ app.post('/api/book', async (req, res) => {
       },
     })
 
-    // The CRM gets every booking from this server, signed (2026-10-16; replaces the browser's call to n8n once the
-    // owner switches over). Fire and forget: the visitor's booking never waits on it or fails because of it.
-    notifyCrm({ clientName, clientPhone: cleanPhone, treatment, date, time, bookingId })
+    // The CRM gets every booking from this server, signed (2026-10-16). Awaited, at most 3 s (2026-10-18: on Vercel a
+    // function is frozen once it answers, so a fire-and-forget call never left); it never fails the visitor's booking.
+    await notifyCrm({ clientName, clientPhone: cleanPhone, treatment, date, time, bookingId })
     // No n8n step (his order, 2026-10-17): the CRM drafts the WhatsApp confirmation from the 050 for his approval.
 
     res.json({ success: true, bookingId })
@@ -167,15 +167,20 @@ app.post('/api/book', async (req, res) => {
 })
 
 /** POST the booking to the CRM with an HMAC-SHA256 signature (CRM_BOOKING_URL, CRM_BOOKING_SECRET; both or nothing). */
-function notifyCrm(booking) {
-  const url = process.env.CRM_BOOKING_URL
-  const secret = process.env.CRM_BOOKING_SECRET
-  if (!url || !secret || !/^https:\/\/crm\.aibosspro\.com\/api\/hooks\/booking$/.test(url)) return
+async function notifyCrm(booking) {
+  const url = String(process.env.CRM_BOOKING_URL || '').trim().replace(/\/+$/, '')
+  const secret = String(process.env.CRM_BOOKING_SECRET || '').trim()
+  // Why a booking did not reach the CRM, never a value (2026-10-18).
+  if (!url || !secret) return console.error('[crm] not sent:', !url ? 'CRM_BOOKING_URL is not set' : 'CRM_BOOKING_SECRET is not set')
+  if (url !== 'https://crm.aibosspro.com/api/hooks/booking') return console.error('[crm] not sent: CRM_BOOKING_URL is not the CRM booking address')
   const raw = JSON.stringify(booking)
   const signature = createHmac('sha256', secret).update(raw).digest('hex')
-  fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Booking-Signature': signature }, body: raw, signal: AbortSignal.timeout(8000) })
-    .then((r) => { if (!r.ok) console.error('[crm]', r.status) })
-    .catch((e) => console.error('[crm]', e.message))
+  try {
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Booking-Signature': signature }, body: raw, signal: AbortSignal.timeout(3000) })
+    if (!r.ok) console.error('[crm]', r.status)
+  } catch (e) {
+    console.error('[crm]', e.message)
+  }
 }
 
 export default app
